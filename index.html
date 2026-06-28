@@ -71,6 +71,22 @@
   <div class="card greeting-card"><h3 id="saudacaoDashboard">Olá 👋</h3><small id="fraseDashboard">Bem-vindo ao seu painel.</small></div>
   <div class="card">
     <h3>🏠 Dashboard do Mês</h3>
+
+    <div class="period-filter">
+  <div>
+    <small>De</small>
+    <input id="filtroDataInicio" type="date">
+  </div>
+  <div>
+    <small>Até</small>
+    <input id="filtroDataFim" type="date">
+  </div>
+  <button class="btn-secondary" onclick="aplicarFiltroPeriodo()">Aplicar</button>
+  <button class="btn-secondary" onclick="limparFiltroPeriodo()">Limpar</button>
+</div>
+
+<small id="periodoDashboardInfo">Exibindo mês atual</small>
+
     <div class="grid">
       <div class="metric-box" data-card="faturamentoBruto"><small>Faturamento Bruto</small><div class="metric" id="fatBruto">R$ 0,00</div></div>
       <div class="metric-box" data-card="lucroLiquido"><small>Lucro Líquido</small><div class="metric" id="lucroLiq">R$ 0,00</div></div>

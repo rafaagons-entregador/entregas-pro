@@ -74,3 +74,25 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px 4px;b
 .prefs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin-top:12px}
 .pref-item{display:flex;align-items:center;gap:8px;background:var(--bg2);border-radius:12px;padding:10px;font-size:14px}
 .pref-item input{width:auto}
+.period-filter{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin:10px 0;
+}
+
+.period-filter small{
+  display:block;
+  margin-bottom:4px;
+  opacity:.75;
+}
+
+.period-filter button{
+  margin-top:0;
+}
+
+@media(max-width:600px){
+  .period-filter{
+    grid-template-columns:1fr 1fr;
+  }
+}

@@ -411,7 +411,20 @@ function atualizarSelectMotoristas(){
 
   atualizarSelectMotoristaPadrao();
 }
-function rotasDoMes(){const mes=mesSelecionado.value;return rotas.map((rota,idx)=>({...rota,idx})).filter(r=>mesDaRota(r)===mes).sort((a,b)=>new Date(a.data)-new Date(b.data));}
+function rotasDoMes(){
+  const inicio = localStorage.getItem('filtro_periodo_inicio');
+  const fim = localStorage.getItem('filtro_periodo_fim');
+
+  if(inicio && fim){
+    return rotas
+      .map((r,i)=>({...r,idx:i}))
+      .filter(r=>r.data>=inicio && r.data<=fim);
+  }
+
+  return rotas
+    .map((r,i)=>({...r,idx:i}))
+    .filter(r=>mesDaRota(r)===mesSelecionado.value);
+}
 function litros(x){return numero(x.km)>0&&numero(x.consumo)>0?numero(x.km)/numero(x.consumo):0;}
 function custo(x){return litros(x)*numero(x.combustivel);}
 function lucro(x){return numero(x.valor)-custo(x);}
@@ -453,6 +466,51 @@ function abrirAba(id){
   if(id==='dia')mesAnaliticoAtual=mesSelecionado.value;if(id==='rota')definirDataHojeRota();atualizar();
 }
 function classePercentual(v){if(v>=99)return'good';if(v>=98)return'warn';return'bad';}
+function aplicarFiltroPeriodo(){
+  const ini = filtroDataInicio.value;
+  const fim = filtroDataFim.value;
+
+  if(!ini || !fim){
+    alert('Selecione a data inicial e final.');
+    return;
+  }
+
+  if(ini > fim){
+    alert('A data inicial não pode ser maior que a final.');
+    return;
+  }
+
+  localStorage.setItem('filtro_periodo_inicio', ini);
+  localStorage.setItem('filtro_periodo_fim', fim);
+
+  atualizar();
+}
+
+function limparFiltroPeriodo(){
+  localStorage.removeItem('filtro_periodo_inicio');
+  localStorage.removeItem('filtro_periodo_fim');
+
+  filtroDataInicio.value = '';
+  filtroDataFim.value = '';
+
+  atualizar();
+}
+
+function atualizarInfoPeriodo(){
+  const info = document.getElementById('periodoDashboardInfo');
+  if(!info)return;
+
+  const ini = localStorage.getItem('filtro_periodo_inicio');
+  const fim = localStorage.getItem('filtro_periodo_fim');
+
+  if(ini && fim){
+    filtroDataInicio.value = ini;
+    filtroDataFim.value = fim;
+    info.textContent = `Exibindo: ${formatarData(ini)} até ${formatarData(fim)}`;
+  }else{
+    info.textContent = `Exibindo: ${nomeMes(mesSelecionado.value)}`;
+  }
+}
 function atualizar(){
   normalizarRotas();rotas.sort((a,b)=>new Date(a.data)-new Date(b.data));
   atualizarSelectCategorias();atualizarSelectMotoristas();atualizarCategoriasUI();atualizarMotoristasUI();
@@ -464,7 +522,7 @@ function atualizar(){
   kmTotal.textContent=financeiro.km.toFixed(1);gastoComb.textContent=moeda(financeiro.gasto);fatBruto.textContent=moeda(financeiro.bruto);lucroLiq.textContent=moeda(financeiro.luc);
   dias.textContent=financeiro.dias;mediaDia.textContent=(financeiro.dias?s.tp/financeiro.dias:0).toFixed(1);lucroKm.textContent=moeda(financeiro.km?financeiro.luc/financeiro.km:0);horasTotal.textContent=financeiro.horas.toFixed(1)+'h';mediaHorasDia.textContent=(financeiro.dias?financeiro.horas/financeiro.dias:0).toFixed(1)+'h';ganhoHora.textContent=moeda(financeiro.horas?financeiro.luc/financeiro.horas:0);
   finBruto.textContent=moeda(financeiro.bruto);finComb.textContent=moeda(financeiro.gasto);finLucro.textContent=moeda(financeiro.luc);finLucroPac.textContent=moeda(s.tp?financeiro.luc/s.tp:0);finLucroKm.textContent=moeda(financeiro.km?financeiro.luc/financeiro.km:0);finGanhoKm.textContent=moeda(financeiro.km?financeiro.bruto/financeiro.km:0);finHoras.textContent=financeiro.horas.toFixed(1)+'h';finGanhoHora.textContent=moeda(financeiro.horas?financeiro.luc/financeiro.horas:0);
-  atualizarSaudacao();renderHistorico(lista);renderFinanceiro(lista);renderResumoCategorias(lista);renderAnalitico();salvar();salvarMotoristas();salvarCategorias();
+  atualizarInfoPeriodo();atualizarSaudacao();renderHistorico(lista);renderFinanceiro(lista);renderResumoCategorias(lista);renderAnalitico();salvar();salvarMotoristas();salvarCategorias();
 }
 function atualizarSelectCategorias(){
   const atual=categoriaRota.value;categoriaRota.innerHTML='';
