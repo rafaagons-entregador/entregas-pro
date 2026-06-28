@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#2563eb">
+<link rel="manifest" href="manifest.json">
+<title>Painel de Entregas Pro</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="splashScreen" class="splash-screen">
+  <div class="splash-card">
+    <img src="icons/icon-192.png" alt="Logo" class="splash-logo">
+    <h2>Painel de Entregas Pro</h2>
+    <p>Criado por Rafaagons</p>
+  </div>
+</div>
+
+<div id="firstAccessScreen" class="auth-screen hidden">
+  <div class="auth-card">
+    <img src="icons/icon-192.png" alt="Logo" class="auth-logo">
+    <h2>Seja bem-vindo ao Painel de Entregas Pro!</h2>
+    <p>Qual seu nome?</p>
+    <input id="primeiroMotoristaNome" placeholder="Digite seu nome">
+    <button onclick="criarPrimeiroMotorista()">Continuar</button>
+    <p id="firstAccessMsg" class="resultado"></p>
+  </div>
+</div>
+
+
+<div id="authScreen" class="auth-screen">
+  <div class="auth-card">
+    <img src="icons/icon-192.png" alt="Logo" class="auth-logo">
+    <h2>Painel de Entregas Pro</h2>
+    <p>Entre para sincronizar suas rotas na nuvem.</p>
+    <input id="authEmail" type="email" placeholder="E-mail">
+    <input id="authPassword" type="password" placeholder="Senha">
+    <button onclick="loginUsuario()">Entrar</button>
+    <button class="btn-secondary" onclick="criarUsuario()">Criar conta</button>
+    <button class="btn-secondary" onclick="recuperarSenha()">Esqueci minha senha</button>
+    <button class="btn-secondary" onclick="reenviarConfirmacao()">Reenviar confirmação</button>
+    <p id="authMsg" class="resultado"></p>
+  </div>
+</div>
+
+
+<div id="recoveryScreen" class="auth-screen hidden">
+  <div class="auth-card">
+    <img src="icons/icon-192.png" alt="Logo" class="auth-logo">
+    <h2>Criar nova senha</h2>
+    <p>Digite sua nova senha para concluir a recuperação.</p>
+    <input id="novaSenha" type="password" placeholder="Nova senha">
+    <input id="confirmarNovaSenha" type="password" placeholder="Confirmar nova senha">
+    <button onclick="salvarNovaSenha()">Salvar nova senha</button>
+    <button class="btn-secondary" onclick="voltarLogin()">Voltar para login</button>
+    <p id="recoveryMsg" class="resultado"></p>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+<header>
+  <img src="icons/icon-192.png" alt="Logo" class="header-logo">
+  <div class="header-text"><div>Painel de Entregas Pro</div><small>Criado por Rafaagons</small></div>
+  <button class="theme-toggle" onclick="alternarTema()" title="Alternar tema">◐</button>
+</header>
+
+<div class="container">
+<section id="inicio" class="aba active">
+  <div class="card greeting-card"><h3 id="saudacaoDashboard">Olá 👋</h3><small id="fraseDashboard">Bem-vindo ao seu painel.</small></div>
+  <div class="card">
+    <h3>🏠 Dashboard do Mês</h3>
+    <div class="grid">
+      <div class="metric-box" data-card="faturamentoBruto"><small>Faturamento Bruto</small><div class="metric" id="fatBruto">R$ 0,00</div></div>
+      <div class="metric-box" data-card="lucroLiquido"><small>Lucro Líquido</small><div class="metric" id="lucroLiq">R$ 0,00</div></div>
+      <div class="metric-box" data-card="pacotes"><small>Pacotes</small><div class="metric" id="tp">0</div></div>
+      <div class="metric-box" data-card="insucessos"><small>Insucessos</small><div class="metric" id="insucessosDash">0</div></div>
+      <div class="metric-box" data-card="reclamacoes"><small>Reclamações</small><div class="metric" id="reclamacoesDash">0</div></div>
+      <div class="metric-box" data-card="sucesso"><small>% Sucesso</small><div class="metric" id="ps">100%</div></div>
+      <div class="metric-box" data-card="semReclamacoes"><small>% Sem Reclamações</small><div class="metric" id="pr">100%</div></div>
+      <div class="metric-box" data-card="kmRodados"><small>Km Rodados</small><div class="metric" id="kmTotal">0</div></div>
+      <div class="metric-box" data-card="gastoCombustivel"><small>Gasto Combustível</small><div class="metric" id="gastoComb">R$ 0,00</div></div>
+      <div class="metric-box" data-card="diasTrabalhados"><small>Dias Trabalhados</small><div class="metric" id="dias">0</div></div>
+      <div class="metric-box" data-card="mediaPacotesDia"><small>Média Pacotes/Dia</small><div class="metric" id="mediaDia">0</div></div>
+      <div class="metric-box" data-card="lucroKm"><small>Lucro/Km</small><div class="metric" id="lucroKm">R$ 0,00</div></div>
+      <div class="metric-box" data-card="horasTrabalhadas"><small>Horas Trabalhadas</small><div class="metric" id="horasTotal">0h</div></div>
+      <div class="metric-box" data-card="mediaHorasDia"><small>Média Horas/Dia</small><div class="metric" id="mediaHorasDia">0h</div></div>
+      <div class="metric-box" data-card="ganhoHora"><small>Ganho/Hora</small><div class="metric" id="ganhoHora">R$ 0,00</div></div>
+    </div>
+  </div>
+  <div class="card"><h3>🏷️ Resumo por Categoria</h3><div id="resumoCategorias"></div></div>
+</section>
+
+<section id="rota" class="aba">
+  <div class="card">
+    <h3>➕ Adicionar Rota</h3>
+
+    <div class="stepper">
+      <div class="step" id="step1">1 Básico</div>
+      <div class="step" id="step2">2 Indicadores</div>
+      <div class="step" id="step3">3 Faturamento</div>
+      <div class="step" id="step4">4 Revisar</div>
+    </div>
+
+    <div class="wizard-step" id="wizard1">
+      <h4>Dados básicos</h4>
+      <button type="button" class="btn-secondary" onclick="data.value=new Date().toISOString().slice(0,10)">Usar data de hoje</button>
+      <select id="categoriaRota" onchange="atualizarCamposCategoria()"></select>
+      <input id="data" type="date">
+
+      <h4>Motorista A</h4>
+      <select id="motoristaA"></select>
+
+      <h4>Motorista B (opcional)</h4>
+      <select id="motoristaB" onchange="atualizarMotoristaB()"></select>
+
+      <div class="row-2">
+        <button class="btn-secondary" onclick="voltarInicio()">Cancelar</button>
+        <button onclick="proximoWizard()">Próximo</button>
+      </div>
+    </div>
+
+    <div class="wizard-step" id="wizard2">
+      <h4>Indicadores</h4>
+      <div id="camposPacotes">
+        <h4>Motorista A</h4>
+        <input id="pacotes" type="number" step="1" placeholder="Pacotes Motorista A">
+        <input id="insucessos" type="number" step="1" placeholder="Insucessos Motorista A" value="0">
+        <input id="reclamacoes" type="number" step="1" placeholder="Reclamações Motorista A" value="0">
+
+        <div id="boxMotoristaB">
+          <h4>Motorista B</h4>
+          <input id="pacotesB" type="number" step="1" placeholder="Pacotes Motorista B">
+          <input id="insucessosB" type="number" step="1" placeholder="Insucessos Motorista B" value="0">
+          <input id="reclamacoesB" type="number" step="1" placeholder="Reclamações Motorista B" value="0">
+        </div>
+      </div>
+
+      <div class="row-2">
+        <button class="btn-secondary" onclick="voltarWizard()">Voltar</button>
+        <button onclick="proximoWizard()">Próximo</button>
+      </div>
+    </div>
+
+    <div class="wizard-step" id="wizard3">
+      <h4>Faturamento único da rota</h4>
+      <input id="valor" type="number" step="0.01" placeholder="Valor recebido total" oninput="atualizarPreviewFinanceiro()">
+      <input id="km" type="number" step="0.1" placeholder="Km rodados" oninput="atualizarPreviewFinanceiro()">
+      <input id="horas" type="number" step="0.1" placeholder="Horas trabalhadas" oninput="atualizarPreviewFinanceiro()">
+      <input id="consumo" type="number" step="0.1" placeholder="Consumo km/L" oninput="atualizarPreviewFinanceiro()">
+      <input id="combustivel" type="number" step="0.01" placeholder="Preço combustível" oninput="atualizarPreviewFinanceiro()">
+      <div id="previewFinanceiro" class="resultado">Preencha os dados financeiros para ver a prévia.</div>
+
+      <div class="row-2">
+        <button class="btn-secondary" onclick="voltarWizard()">Voltar</button>
+        <button onclick="proximoWizard()">Revisar</button>
+      </div>
+    </div>
+
+    <div class="wizard-step" id="wizard4">
+      <h4>Revisar antes de salvar</h4>
+      <div id="resumoRota" class="resultado review-box"></div>
+      <div class="row-2">
+        <button class="btn-secondary" onclick="voltarWizard()">Voltar</button>
+        <button class="btn-success" onclick="salvarRota()">Salvar Rota</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <button id="btnHistorico" onclick="toggleHistorico()">📋 Mostrar Rotas do Mês</button>
+    <div id="historicoContainer" class="hidden" style="overflow-x:auto;margin-top:10px">
+      <table><thead><tr><th>Data</th><th>Cat.</th><th colspan="3">Motoristas / Indicadores</th><th>Ações</th></tr></thead><tbody id="hist"></tbody></table>
+    </div>
+  </div>
+</section>
+
+<section id="dia" class="aba">
+  <div class="analytico-hero">
+    <div class="month-nav">
+      <button onclick="mudarMesAnalitico(-1)">‹</button>
+      <div>
+        <div class="month-title" id="analiticoTitulo">Mês</div>
+        <div class="month-sub">Toque em um dia com rota para ver o resumo detalhado</div>
+      </div>
+      <button onclick="mudarMesAnalitico(1)">›</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="analysis-grid" id="analiticoCalendario"></div>
+  </div>
+
+  <div class="card">
+    <h3>🏆 Melhores dias do mês</h3>
+    <div id="analiticoTopDias"></div>
+  </div>
+</section>
+
+
+<section id="ferramentas" class="aba">
+  <div class="card">
+    <h3>🧰 Ferramentas</h3>
+    <small>Simulações rápidas para acompanhar seus indicadores.</small>
+  </div>
+
+  <div class="card">
+    <h3>🎯 Meta</h3>
+    <small>Veja quantos pacotes perfeitos faltam para atingir uma porcentagem sem reclamações.</small>
+    <input id="metaPercentual" type="number" step="0.01" min="0" max="100" inputmode="decimal" placeholder="Ex: 99,90">
+    <button onclick="calcularMetaPacotes()">Calcular</button>
+    <p id="metaRes" class="resultado"></p>
+  </div>
+
+  <div class="card">
+    <h3>🎯 Meta de Sucesso</h3>
+    <small>Veja quantas entregas perfeitas faltam para atingir uma porcentagem de entregas com sucesso.</small>
+    <input id="metaSucessoPercentual" type="number" step="0.01" min="0" max="100" inputmode="decimal" placeholder="Ex: 99,00">
+    <button onclick="calcularMetaInsucessos()">Calcular</button>
+    <p id="metaInsRes" class="resultado"></p>
+  </div>
+
+  <div class="card">
+    <h3>🚚 Simular Insucessos</h3>
+    <input id="simIns" type="number" step="1" min="0" inputmode="numeric" value="1">
+    <button onclick="simularInsucessos()">Simular</button>
+    <p id="simInsRes" class="resultado"></p>
+  </div>
+
+  <div class="card">
+    <h3>⚠️ Simular Reclamações</h3>
+    <input id="simRec" type="number" step="1" min="0" inputmode="numeric" value="1">
+    <button onclick="simularReclamacoes()">Simular</button>
+    <p id="simRecRes" class="resultado"></p>
+  </div>
+</section>
+
+<section id="faturamento" class="aba">
+  <div class="card"><h3>💰 Faturamento do Mês</h3><div class="grid">
+    <div class="metric-box"><small>Bruto</small><div class="metric" id="finBruto">R$ 0,00</div></div>
+    <div class="metric-box"><small>Combustível</small><div class="metric" id="finComb">R$ 0,00</div></div>
+    <div class="metric-box"><small>Líquido</small><div class="metric" id="finLucro">R$ 0,00</div></div>
+    <div class="metric-box"><small>Lucro/Pacote</small><div class="metric" id="finLucroPac">R$ 0,00</div></div>
+    <div class="metric-box"><small>Lucro/Km</small><div class="metric" id="finLucroKm">R$ 0,00</div></div>
+    <div class="metric-box"><small>Ganho/Km</small><div class="metric" id="finGanhoKm">R$ 0,00</div></div>
+    <div class="metric-box"><small>Horas</small><div class="metric" id="finHoras">0h</div></div>
+    <div class="metric-box"><small>Ganho/Hora</small><div class="metric" id="finGanhoHora">R$ 0,00</div></div>
+  </div></div>
+  <div class="card" style="overflow-x:auto"><h3>Rotas Financeiras</h3><table><thead><tr><th>Data</th><th>Cat.</th><th>Bruto</th><th>Km</th><th>Horas</th><th>Comb.</th><th>Líquido</th><th>Ações</th></tr></thead><tbody id="histFin"></tbody></table></div>
+</section>
+
+<section id="categorias" class="aba">
+  <div class="card"><h3>☁️ Conta</h3><p id="usuarioLogadoInfo">Usuário logado</p><button class="btn-secondary" onclick="alterarSenhaLogado()">Alterar senha</button><button class="btn-danger" onclick="logoutUsuario()">Sair</button></div>
+  <div class="card">
+    <h3>🎛️ Filtros do Painel</h3>
+    <small>Esses filtros controlam o mês e o motorista exibidos nos indicadores.</small>
+    <h4>Mês</h4>
+    <select id="mesSelecionado" onchange="atualizar()"></select>
+    <h4>Motorista</h4>
+    <select id="motoristaSelecionado" onchange="atualizar()"></select>
+    <h4>Motorista padrão</h4>
+    <select id="motoristaPadraoSelecionado" onchange="definirMotoristaPadrao(this.value)"></select>
+  </div>
+
+  
+  <div class="card">
+    <h3>🧩 Personalizar Dashboard</h3>
+    <small>Escolha quais cards aparecem na tela inicial. Essa preferência fica salva na sua conta.</small>
+    <div id="dashboardPrefs" class="prefs-grid"></div>
+    <button class="btn-success" onclick="salvarPreferenciasDashboard()">Salvar preferências</button>
+    <button class="btn-secondary" onclick="restaurarDashboardPadrao()">Restaurar padrão</button>
+    <p id="prefsMsg" class="resultado"></p>
+  </div>
+
+  <div class="card"><h3>👥 Motoristas</h3><input id="novoMotorista" placeholder="Nome do motorista"><button onclick="criarMotorista()">Salvar Motorista</button><div id="listaMotoristas"></div></div>
+  <div class="card"><h3>⚙️ Criar Categoria</h3><input id="novaCategoria" placeholder="Nome da categoria, ex: Mercado Livre">
+    <label><input id="catPacotes" type="checkbox" checked style="width:auto"> Usa pacotes</label><br>
+    <label><input id="catInsucessos" type="checkbox" checked style="width:auto"> Usa insucessos</label><br>
+    <label><input id="catReclamacoes" type="checkbox" checked style="width:auto"> Usa reclamações</label><br>
+    <label><input id="catIndicadores" type="checkbox" checked style="width:auto"> Participa dos indicadores</label>
+    <button onclick="criarCategoria()">Salvar Categoria</button>
+  </div>
+  <div class="card"><h3>Categorias</h3><div id="listaCategorias"></div></div>
+  <div class="card"><h3>⚙️ Avançado</h3><button onclick="exportar()">Exportar backup JSON</button><small>Backup manual apenas para segurança. Seus dados principais ficam salvos na nuvem.</small><select id="motoristaBackup" class="hidden"></select><select id="modoImportacao" class="hidden"><option value="adicionar">Adicionar</option></select></div>
+</section>
+</div>
+
+<nav class="menu">
+  <button id="mInicio" class="active" onclick="abrirAba('inicio')">🏠<br>Início</button>
+  <button id="mRota" onclick="abrirAba('rota')">➕<br>Rota</button>
+  <button id="mDia" onclick="abrirAba('dia')">📊<br>Análise</button>
+  <button id="mFerramentas" onclick="abrirAba('ferramentas')">🧰<br>Ferr.</button>
+  <button id="mFaturamento" onclick="abrirAba('faturamento')">💰<br>Fat.</button>
+  <button id="mCategorias" onclick="abrirAba('categorias')">⚙️<br>Config.</button>
+</nav>
+</div>
+
+
+<div class="detail-bg" id="diaDetalheBg" onclick="fecharDetalheDia(event)">
+  <div class="detail-modal" onclick="event.stopPropagation()">
+    <div class="detail-title" id="diaDetalheTitulo">Resumo do dia</div>
+    <div class="detail-sub" id="diaDetalheSub"></div>
+    <div id="diaDetalheConteudo"></div>
+    <button class="btn-secondary" onclick="fecharDetalheDia()">Fechar</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/auth.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
