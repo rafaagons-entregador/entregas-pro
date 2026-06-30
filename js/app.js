@@ -593,8 +593,10 @@ function validarWizard(etapa){
       if(erro){alert('Motorista B: '+erro);return false;}
     }
 
-    if(cat.usaPacotes&&p<=0){alert('Preencha os pacotes do Motorista A.');return false;}
-    if(temB&&cat.usaPacotes&&p2<=0){alert('Preencha os pacotes do Motorista B ou deixe sem segundo motorista.');return false;}
+    if(cat.usaPacotes && (p + p2) <= 0){
+  alert('Preencha pacotes em pelo menos um motorista.');
+  return false;
+}
   }
 
   if(etapa===3){
