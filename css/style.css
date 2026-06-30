@@ -1,5 +1,5 @@
-:root{--azul:#123b8f;--bg:#eef2f7;--card:#fff;--texto:#111827;--sub:#6b7280;--borda:#d9dce3;--verde:#16a34a;--amarelo:#ca8a04;--vermelho:#dc2626;--cinza:#64748b}
-body.dark{--bg:#111827;--card:#1f2937;--texto:#f3f4f6;--sub:#cbd5e1;--borda:#374151}
+:root{--azul:#154896;--azul2:#1f63c5;--amarelo-logo:#f6c339;--bg:#eef3f8;--card:#fff;--texto:#111827;--sub:#6b7280;--borda:#d9dce3;--verde:#16a34a;--amarelo:#ca8a04;--vermelho:#dc2626;--cinza:#64748b}
+body.dark{--bg:#0f172a;--card:#172033;--texto:#f3f4f6;--sub:#cbd5e1;--borda:#334155}
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--texto);padding-bottom:78px}
 header{position:sticky;top:0;z-index:10;background:var(--azul);color:#fff;padding:10px 15px;text-align:center;font-size:20px;font-weight:bold;box-shadow:0 2px 8px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;gap:10px}
@@ -95,4 +95,40 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:8px 4px;b
   .period-filter{
     grid-template-columns:1fr 1fr;
   }
+}
+
+/* Entreghia v12 */
+header{background:linear-gradient(135deg,var(--azul),var(--azul2))}
+.header-logo,.auth-logo,.splash-logo{background:#154896;object-fit:cover}
+button{background:var(--azul)}
+button:hover{filter:brightness(.98)}
+.menu button.active{background:var(--azul);color:#fff}
+.metric-box{background:rgba(21,72,150,.08);border:1px solid rgba(21,72,150,.08)}
+body.dark .metric-box{background:rgba(246,195,57,.06);border-color:rgba(246,195,57,.12)}
+.route-hero{display:flex;align-items:center;justify-content:space-between;gap:12px;background:linear-gradient(135deg,rgba(21,72,150,.12),rgba(246,195,57,.20));border:1px solid rgba(21,72,150,.10)}
+.route-hero h3{margin-bottom:2px}.compact-btn{max-width:120px;margin:0;padding:10px}
+.route-form-card{border-top:4px solid var(--amarelo-logo)}
+.form-section{border:1px solid var(--borda);border-radius:16px;padding:12px;margin-bottom:12px;background:rgba(21,72,150,.035)}
+body.dark .form-section{background:rgba(255,255,255,.035)}
+.form-section h4{margin:0 0 10px;color:var(--azul)}body.dark .form-section h4{color:var(--amarelo-logo)}
+.route-account-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.account-card{border:1px solid var(--borda);border-radius:14px;padding:12px;background:var(--card)}
+.account-card h4{margin-top:0}.sticky-actions{position:sticky;bottom:78px;background:var(--card);padding-top:8px;z-index:5;border-top:1px solid var(--borda)}
+.money-hint{font-size:12px;color:var(--sub)}
+@media(max-width:640px){.route-account-grid{grid-template-columns:1fr}.row-3{grid-template-columns:1fr}.route-hero{align-items:flex-start}.compact-btn{max-width:none}}
+
+#financeiroRotasContainer table th:last-child,#financeiroRotasContainer table td:last-child{white-space:nowrap}
+
+/* Entreghia v12.2 - logo oficial no cabeçalho */
+.header-brand-logo{
+  height:48px;
+  width:auto;
+  max-width:260px;
+  object-fit:contain;
+  display:block;
+}
+header{
+  min-height:64px;
+}
+@media(max-width:480px){
+  .header-brand-logo{height:42px;max-width:220px;}
 }

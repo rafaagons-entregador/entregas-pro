@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#2563eb">
+<meta name="theme-color" content="#154896">
 <link rel="manifest" href="manifest.json">
-<title>Painel de Entregas Pro</title>
+<link rel="icon" href="favicon.ico">
+<title>Entreghia</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -13,15 +14,15 @@
 <div id="splashScreen" class="splash-screen">
   <div class="splash-card">
     <img src="icons/icon-192.png" alt="Logo" class="splash-logo">
-    <h2>Painel de Entregas Pro</h2>
-    <p>Criado por Rafaagons</p>
+    <h2>Entreghia</h2>
+    <p>O guia das suas entregas</p>
   </div>
 </div>
 
 <div id="firstAccessScreen" class="auth-screen hidden">
   <div class="auth-card">
     <img src="icons/icon-192.png" alt="Logo" class="auth-logo">
-    <h2>Seja bem-vindo ao Painel de Entregas Pro!</h2>
+    <h2>Seja bem-vindo ao Entreghia!</h2>
     <p>Qual seu nome?</p>
     <input id="primeiroMotoristaNome" placeholder="Digite seu nome">
     <button onclick="criarPrimeiroMotorista()">Continuar</button>
@@ -33,8 +34,8 @@
 <div id="authScreen" class="auth-screen">
   <div class="auth-card">
     <img src="icons/icon-192.png" alt="Logo" class="auth-logo">
-    <h2>Painel de Entregas Pro</h2>
-    <p>Entre para sincronizar suas rotas na nuvem.</p>
+    <h2>Entreghia</h2>
+    <p>Entre para sincronizar suas entregas na nuvem.</p>
     <input id="authEmail" type="email" placeholder="E-mail">
     <input id="authPassword" type="password" placeholder="Senha">
     <button onclick="loginUsuario()">Entrar</button>
@@ -61,8 +62,7 @@
 
 <div id="app" class="hidden">
 <header>
-  <img src="icons/icon-192.png" alt="Logo" class="header-logo">
-  <div class="header-text"><div>Painel de Entregas Pro</div><small>Criado por Rafaagons</small></div>
+  <img src="icons/logo-header.png" alt="Entreghia" class="header-brand-logo">
   <button class="theme-toggle" onclick="alternarTema()" title="Alternar tema">◐</button>
 </header>
 
@@ -109,78 +109,106 @@
 </section>
 
 <section id="rota" class="aba">
-  <div class="card">
-    <h3>➕ Adicionar Rota</h3>
-
-    <div class="stepper">
-      <div class="step" id="step1">1 Básico</div>
-      <div class="step" id="step2">2 Indicadores</div>
-      <div class="step" id="step3">3 Faturamento</div>
-      <div class="step" id="step4">4 Revisar</div>
+  <div class="route-hero card">
+    <div>
+      <h3>➕ Nova rota</h3>
+      <small>Cadastre ou edite todos os dados em uma única tela.</small>
     </div>
+    <button class="btn-secondary compact-btn" onclick="limparFormularioRota();">Limpar</button>
+  </div>
 
-    <div class="wizard-step" id="wizard1">
-      <h4>Dados básicos</h4>
-      <button type="button" class="btn-secondary" onclick="data.value=new Date().toISOString().slice(0,10)">Usar data de hoje</button>
-      <select id="categoriaRota" onchange="atualizarCamposCategoria()"></select>
-      <input id="data" type="date">
+  <div class="card route-form-card">
+    <input id="rotaEditandoIdx" type="hidden" value="">
 
-      <h4>Motorista A</h4>
-      <select id="motoristaA"></select>
-
-      <h4>Motorista B (opcional)</h4>
-      <select id="motoristaB" onchange="atualizarMotoristaB()"></select>
-
+    <div class="form-section">
+      <h4>Dados da rota</h4>
       <div class="row-2">
-        <button class="btn-secondary" onclick="voltarInicio()">Cancelar</button>
-        <button onclick="proximoWizard()">Próximo</button>
-      </div>
-    </div>
-
-    <div class="wizard-step" id="wizard2">
-      <h4>Indicadores</h4>
-      <div id="camposPacotes">
-        <h4>Motorista A</h4>
-        <input id="pacotes" type="number" step="1" placeholder="Pacotes Motorista A">
-        <input id="insucessos" type="number" step="1" placeholder="Insucessos Motorista A" value="0">
-        <input id="reclamacoes" type="number" step="1" placeholder="Reclamações Motorista A" value="0">
-
-        <div id="boxMotoristaB">
-          <h4>Motorista B</h4>
-          <input id="pacotesB" type="number" step="1" placeholder="Pacotes Motorista B">
-          <input id="insucessosB" type="number" step="1" placeholder="Insucessos Motorista B" value="0">
-          <input id="reclamacoesB" type="number" step="1" placeholder="Reclamações Motorista B" value="0">
+        <div>
+          <label>Data</label>
+          <input id="data" type="date">
+        </div>
+        <div>
+          <label>Categoria</label>
+          <select id="categoriaRota" onchange="atualizarCamposCategoria();atualizarTipoLancamentoRota();atualizarPreviewFinanceiro();"></select>
         </div>
       </div>
 
-      <div class="row-2">
-        <button class="btn-secondary" onclick="voltarWizard()">Voltar</button>
-        <button onclick="proximoWizard()">Próximo</button>
-      </div>
+      <label>Tipo de lançamento</label>
+      <select id="tipoLancamentoRota" onchange="atualizarTipoLancamentoRota();atualizarPreviewFinanceiro();">
+        <option value="padrao">Somente conta padrão</option>
+        <option value="b">Somente conta B</option>
+        <option value="ambas">Conta padrão + conta B</option>
+      </select>
     </div>
 
-    <div class="wizard-step" id="wizard3">
-      <h4>Faturamento único da rota</h4>
-      <input id="valor" type="number" step="0.01" placeholder="Valor recebido total" oninput="atualizarPreviewFinanceiro()">
-      <input id="km" type="number" step="0.1" placeholder="Km rodados" oninput="atualizarPreviewFinanceiro()">
-      <input id="horas" type="number" step="0.1" placeholder="Horas trabalhadas" oninput="atualizarPreviewFinanceiro()">
-      <input id="consumo" type="number" step="0.1" placeholder="Consumo km/L" oninput="atualizarPreviewFinanceiro()">
-      <input id="combustivel" type="number" step="0.01" placeholder="Preço combustível" oninput="atualizarPreviewFinanceiro()">
+    <div class="form-section">
+      <h4>Financeiro</h4>
+      <div class="row-2">
+        <div>
+          <label>Valor recebido total</label>
+          <input id="valor" type="text" inputmode="decimal" placeholder="0,00" onblur="formatarCampoMoeda(this);atualizarPreviewFinanceiro()" oninput="atualizarPreviewFinanceiro()">
+        </div>
+        <div>
+          <label>Km rodados</label>
+          <input id="km" type="number" step="0.1" placeholder="Km" oninput="atualizarPreviewFinanceiro()">
+        </div>
+      </div>
+      <div class="row-3">
+        <div>
+          <label>Horas</label>
+          <input id="horas" type="number" step="0.1" placeholder="Horas" oninput="atualizarPreviewFinanceiro()">
+        </div>
+        <div>
+          <label>Consumo km/L</label>
+          <input id="consumo" type="number" step="0.1" placeholder="Km/L" oninput="atualizarPreviewFinanceiro()">
+        </div>
+        <div>
+          <label>Preço combustível</label>
+          <input id="combustivel" type="text" inputmode="decimal" placeholder="0,00" onblur="formatarCampoMoeda(this);atualizarPreviewFinanceiro()" oninput="atualizarPreviewFinanceiro()">
+        </div>
+      </div>
       <div id="previewFinanceiro" class="resultado">Preencha os dados financeiros para ver a prévia.</div>
+    </div>
 
-      <div class="row-2">
-        <button class="btn-secondary" onclick="voltarWizard()">Voltar</button>
-        <button onclick="proximoWizard()">Revisar</button>
+    <div class="form-section">
+      <h4>Indicadores</h4>
+      <div class="route-account-grid">
+        <div id="blocoContaPadrao" class="account-card">
+          <h4>Conta padrão — <span id="nomeContaPadrao">Motorista padrão</span></h4>
+          <input id="motoristaA" type="hidden">
+          <div id="camposContaPadrao">
+            <label>Pacotes</label>
+            <input id="pacotes" type="number" step="1" placeholder="Pacotes" value="0" oninput="montarResumoRota()">
+            <label>Insucessos</label>
+            <input id="insucessos" type="number" step="1" placeholder="Insucessos" value="0" oninput="montarResumoRota()">
+            <label>Reclamações</label>
+            <input id="reclamacoes" type="number" step="1" placeholder="Reclamações" value="0" oninput="montarResumoRota()">
+          </div>
+        </div>
+
+        <div id="boxMotoristaB" class="account-card">
+          <h4>Conta B — <span id="nomeContaB">Segundo motorista</span></h4>
+          <input id="motoristaB" type="hidden">
+          <div id="camposContaB">
+            <label>Pacotes</label>
+            <input id="pacotesB" type="number" step="1" placeholder="Pacotes" value="0" oninput="montarResumoRota()">
+            <label>Insucessos</label>
+            <input id="insucessosB" type="number" step="1" placeholder="Insucessos" value="0" oninput="montarResumoRota()">
+            <label>Reclamações</label>
+            <input id="reclamacoesB" type="number" step="1" placeholder="Reclamações" value="0" oninput="montarResumoRota()">
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="wizard-step" id="wizard4">
-      <h4>Revisar antes de salvar</h4>
-      <div id="resumoRota" class="resultado review-box"></div>
-      <div class="row-2">
-        <button class="btn-secondary" onclick="voltarWizard()">Voltar</button>
-        <button class="btn-success" onclick="salvarRota()">Salvar Rota</button>
-      </div>
+    <div class="form-section">
+      <h4>Revisão</h4>
+      <div id="resumoRota" class="resultado review-box">Preencha os campos para visualizar o resumo.</div>
+    </div>
+
+    <div class="row-2 sticky-actions">
+      <button class="btn-secondary" onclick="limparFormularioRota();abrirAba('inicio')">Cancelar</button>
+      <button id="btnSalvarRota" class="btn-success" onclick="salvarRota()">Salvar rota</button>
     </div>
   </div>
 
@@ -253,7 +281,25 @@
 </section>
 
 <section id="faturamento" class="aba">
-  <div class="card"><h3>💰 Faturamento do Mês</h3><div class="grid">
+  <div class="card">
+    <h3>💰 Faturamento</h3>
+    <small>Filtre o período para analisar seus ganhos, custos, km e horas.</small>
+    <div class="period-filter">
+      <div>
+        <small>De</small>
+        <input id="filtroFinInicio" type="date">
+      </div>
+      <div>
+        <small>Até</small>
+        <input id="filtroFinFim" type="date">
+      </div>
+      <button class="btn-secondary" onclick="aplicarFiltroFinanceiro()">Filtrar</button>
+      <button class="btn-secondary" onclick="limparFiltroFinanceiro()">Limpar</button>
+    </div>
+    <small id="periodoFinanceiroInfo">Exibindo mês atual</small>
+  </div>
+
+  <div class="card"><h3>💰 Resumo Financeiro</h3><div class="grid">
     <div class="metric-box"><small>Bruto</small><div class="metric" id="finBruto">R$ 0,00</div></div>
     <div class="metric-box"><small>Combustível</small><div class="metric" id="finComb">R$ 0,00</div></div>
     <div class="metric-box"><small>Líquido</small><div class="metric" id="finLucro">R$ 0,00</div></div>
@@ -263,7 +309,13 @@
     <div class="metric-box"><small>Horas</small><div class="metric" id="finHoras">0h</div></div>
     <div class="metric-box"><small>Ganho/Hora</small><div class="metric" id="finGanhoHora">R$ 0,00</div></div>
   </div></div>
-  <div class="card" style="overflow-x:auto"><h3>Rotas Financeiras</h3><table><thead><tr><th>Data</th><th>Cat.</th><th>Bruto</th><th>Km</th><th>Horas</th><th>Comb.</th><th>Líquido</th><th>Ações</th></tr></thead><tbody id="histFin"></tbody></table></div>
+
+  <div class="card">
+    <button id="btnFinanceiroRotas" onclick="toggleFinanceiroRotas()">📋 Mostrar rotas financeiras</button>
+    <div id="financeiroRotasContainer" class="hidden" style="overflow-x:auto;margin-top:10px">
+      <table><thead><tr><th>Data</th><th>Cat.</th><th>Bruto</th><th>Km</th><th>Horas</th><th>Comb.</th><th>Líquido</th></tr></thead><tbody id="histFin"></tbody></table>
+    </div>
+  </div>
 </section>
 
 <section id="categorias" class="aba">

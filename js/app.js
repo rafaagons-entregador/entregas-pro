@@ -24,7 +24,19 @@ if(!Array.isArray(categorias) || categorias.length===0){
 }
 
 function moeda(v){return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
-function numero(v){return Number(v||0);}
+function numero(v){
+  if(typeof v==='string'){
+    let s=v.trim();
+    if(!s)return 0;
+    s=s.replace(/R\$\s?/g,'').replace(/\s/g,'');
+    if(s.includes(','))s=s.replace(/\./g,'').replace(',','.');
+    return Number(s)||0;
+  }
+  return Number(v||0);
+}
+function formatarNumeroBR(v){return numero(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function formatarCampoMoeda(el){if(!el)return;const n=numero(el.value);el.value=n?formatarNumeroBR(n):'';}
+
 function inteiro(v){return Number.isInteger(Number(v));}
 function salvar(){localStorage.setItem('rotas_v3',JSON.stringify(rotas));}
 function salvarCategorias(){localStorage.setItem('categorias_v8',JSON.stringify(categorias));if(usuarioAtual&&!carregandoNuvem)sincronizarCategoriasNuvem();}
@@ -366,6 +378,36 @@ function carregarMeses(){
   meses.forEach(m=>{const op=document.createElement('option');op.value=m;op.textContent=nomeMes(m);mesSelecionado.appendChild(op);});
   mesSelecionado.value=meses.includes(anterior)?anterior:atual;
 }
+function obterMotoristaBPadrao(){
+  const salvo=localStorage.getItem('motorista_b_v11');
+  if(salvo && motoristas.includes(salvo) && salvo!==obterMotoristaPadrao())return salvo;
+  const padrao=obterMotoristaPadrao();
+  return motoristas.find(m=>m && m!==padrao) || '';
+}
+
+function preencherCampoMotorista(el, valor, opcoes=[]){
+  if(!el)return;
+  if(el.tagName==='SELECT'){
+    el.innerHTML='';
+    opcoes.forEach(o=>{
+      const op=document.createElement('option');
+      op.value=o.value;
+      op.textContent=o.text;
+      el.appendChild(op);
+    });
+  }
+  el.value=valor||'';
+}
+
+function atualizarLabelsContas(){
+  const a=obterMotoristaPadrao();
+  const b=obterMotoristaBPadrao();
+  const nomeA=document.getElementById('nomeContaPadrao');
+  const nomeB=document.getElementById('nomeContaB');
+  if(nomeA)nomeA.textContent=a || 'Motorista padrão';
+  if(nomeB)nomeB.textContent=b || 'crie/defina um segundo motorista';
+}
+
 function atualizarSelectMotoristas(){
   const filtroAtual=motoristaSelecionado.value||obterMotoristaPadrao();
   motoristaSelecionado.innerHTML='<option value="Todos">Todos os motoristas</option>';
@@ -377,26 +419,10 @@ function atualizarSelectMotoristas(){
   });
   motoristaSelecionado.value=[...motoristaSelecionado.options].some(o=>o.value===filtroAtual)?filtroAtual:'Todos';
 
-  const a=motoristaA.value;
-  const b=motoristaB.value;
   const backupEl=document.getElementById('motoristaBackup');
   const mb=backupEl?backupEl.value:'';
-
-  motoristaA.innerHTML='';
-  motoristaB.innerHTML='<option value="">Sem segundo motorista</option>';
   if(backupEl)backupEl.innerHTML='';
-
   motoristas.forEach(c=>{
-    let op1=document.createElement('option');
-    op1.value=c;
-    op1.textContent=c;
-    motoristaA.appendChild(op1);
-
-    let op2=document.createElement('option');
-    op2.value=c;
-    op2.textContent=c;
-    motoristaB.appendChild(op2);
-
     if(backupEl){
       let op3=document.createElement('option');
       op3.value=c;
@@ -404,10 +430,15 @@ function atualizarSelectMotoristas(){
       backupEl.appendChild(op3);
     }
   });
-
-  if(motoristas.includes(a))motoristaA.value=a;
-  if(motoristas.includes(b))motoristaB.value=b;
   if(backupEl&&motoristas.includes(mb))backupEl.value=mb;
+
+  const padrao=obterMotoristaPadrao();
+  const contaB=obterMotoristaBPadrao();
+  const opcoesA=motoristas.map(c=>({value:c,text:c}));
+  const opcoesB=[{value:'',text:'Sem segundo motorista'},...motoristas.map(c=>({value:c,text:c}))];
+  preencherCampoMotorista(document.getElementById('motoristaA'),padrao,opcoesA);
+  preencherCampoMotorista(document.getElementById('motoristaB'),contaB,opcoesB);
+  atualizarLabelsContas();
 
   atualizarSelectMotoristaPadrao();
 }
@@ -463,7 +494,7 @@ function definirDataHojeRota(){
 function abrirAba(id){
   document.querySelectorAll('.aba').forEach(a=>a.classList.remove('active'));document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'));
   document.getElementById(id).classList.add('active');document.getElementById('m'+id.charAt(0).toUpperCase()+id.slice(1)).classList.add('active');
-  if(id==='dia')mesAnaliticoAtual=mesSelecionado.value;if(id==='rota')definirDataHojeRota();atualizar();
+  if(id==='dia')mesAnaliticoAtual=mesSelecionado.value;if(id==='rota'){definirDataHojeRota();atualizarCamposCategoria();atualizarTipoLancamentoRota();montarResumoRota();}atualizar();
 }
 function classePercentual(v){if(v>=99)return'good';if(v>=98)return'warn';return'bad';}
 function aplicarFiltroPeriodo(){
@@ -511,18 +542,84 @@ function atualizarInfoPeriodo(){
     info.textContent = `Exibindo: ${nomeMes(mesSelecionado.value)}`;
   }
 }
+
+let financeiroRotasAberto=false;
+
+function datasMesAtualFinanceiro(){
+  const mes=mesSelecionado?.value||hojeMes();
+  const [ano,mesNum]=mes.split('-').map(Number);
+  const inicio=`${ano}-${String(mesNum).padStart(2,'0')}-01`;
+  const fimData=new Date(ano,mesNum,0).getDate();
+  const fim=`${ano}-${String(mesNum).padStart(2,'0')}-${String(fimData).padStart(2,'0')}`;
+  return {inicio,fim};
+}
+
+function intervaloFinanceiro(){
+  let inicio=localStorage.getItem('filtro_financeiro_inicio');
+  let fim=localStorage.getItem('filtro_financeiro_fim');
+  if(!inicio||!fim){
+    const padrao=datasMesAtualFinanceiro();
+    inicio=padrao.inicio;
+    fim=padrao.fim;
+  }
+  return {inicio,fim};
+}
+
+function rotasFinanceiroPeriodo(){
+  const {inicio,fim}=intervaloFinanceiro();
+  return rotas.map((r,i)=>({...r,idx:i})).filter(r=>r.data>=inicio&&r.data<=fim);
+}
+
+function aplicarFiltroFinanceiro(){
+  const ini=filtroFinInicio.value;
+  const fim=filtroFinFim.value;
+  if(!ini||!fim){alert('Selecione a data inicial e final.');return;}
+  if(ini>fim){alert('A data inicial não pode ser maior que a final.');return;}
+  localStorage.setItem('filtro_financeiro_inicio',ini);
+  localStorage.setItem('filtro_financeiro_fim',fim);
+  atualizar();
+}
+
+function limparFiltroFinanceiro(){
+  localStorage.removeItem('filtro_financeiro_inicio');
+  localStorage.removeItem('filtro_financeiro_fim');
+  const padrao=datasMesAtualFinanceiro();
+  if(document.getElementById('filtroFinInicio'))filtroFinInicio.value=padrao.inicio;
+  if(document.getElementById('filtroFinFim'))filtroFinFim.value=padrao.fim;
+  atualizar();
+}
+
+function atualizarInfoFinanceiro(){
+  const info=document.getElementById('periodoFinanceiroInfo');
+  if(!info)return;
+  const {inicio,fim}=intervaloFinanceiro();
+  if(document.getElementById('filtroFinInicio'))filtroFinInicio.value=inicio;
+  if(document.getElementById('filtroFinFim'))filtroFinFim.value=fim;
+  const lista=rotasFinanceiroPeriodo();
+  const f=stats(lista,'Todos',false);
+  info.textContent=`Exibindo: ${formatarData(inicio)} até ${formatarData(fim)} • ${lista.length} rota(s) • ${moeda(f.bruto)} bruto`;
+}
+
+function toggleFinanceiroRotas(){
+  financeiroRotasAberto=!financeiroRotasAberto;
+  const box=document.getElementById('financeiroRotasContainer');
+  const btn=document.getElementById('btnFinanceiroRotas');
+  if(box)box.classList.toggle('hidden',!financeiroRotasAberto);
+  if(btn)btn.textContent=financeiroRotasAberto?'📋 Esconder rotas financeiras':'📋 Mostrar rotas financeiras';
+}
+
 function atualizar(){
   normalizarRotas();rotas.sort((a,b)=>new Date(a.data)-new Date(b.data));
   atualizarSelectCategorias();atualizarSelectMotoristas();atualizarCategoriasUI();atualizarMotoristasUI();
-  const lista=rotasDoMes(),filtro=motoristaSelecionado.value||'Todos',s=stats(lista,filtro),financeiro=stats(lista,'Todos');
+  const lista=rotasDoMes(),filtro=motoristaSelecionado.value||'Todos',s=stats(lista,filtro),financeiroDashboard=stats(lista,'Todos'),listaFin=rotasFinanceiroPeriodo(),financeiro=stats(listaFin,'Todos',false),sFin=stats(listaFin,'Todos',false);
   const sucesso=s.tp?((s.tp-s.ti)/s.tp*100):100,recl=s.tp?((s.tp-s.tr)/s.tp*100):100;
   tp.textContent=s.tp;
   insucessosDash.textContent=s.ti;
   reclamacoesDash.textContent=s.tr;;ps.textContent=sucesso.toFixed(2)+'%';pr.textContent=recl.toFixed(2)+'%';ps.className='metric '+classePercentual(sucesso);pr.className='metric '+classePercentual(recl);
-  kmTotal.textContent=financeiro.km.toFixed(1);gastoComb.textContent=moeda(financeiro.gasto);fatBruto.textContent=moeda(financeiro.bruto);lucroLiq.textContent=moeda(financeiro.luc);
-  dias.textContent=financeiro.dias;mediaDia.textContent=(financeiro.dias?s.tp/financeiro.dias:0).toFixed(1);lucroKm.textContent=moeda(financeiro.km?financeiro.luc/financeiro.km:0);horasTotal.textContent=financeiro.horas.toFixed(1)+'h';mediaHorasDia.textContent=(financeiro.dias?financeiro.horas/financeiro.dias:0).toFixed(1)+'h';ganhoHora.textContent=moeda(financeiro.horas?financeiro.luc/financeiro.horas:0);
-  finBruto.textContent=moeda(financeiro.bruto);finComb.textContent=moeda(financeiro.gasto);finLucro.textContent=moeda(financeiro.luc);finLucroPac.textContent=moeda(s.tp?financeiro.luc/s.tp:0);finLucroKm.textContent=moeda(financeiro.km?financeiro.luc/financeiro.km:0);finGanhoKm.textContent=moeda(financeiro.km?financeiro.bruto/financeiro.km:0);finHoras.textContent=financeiro.horas.toFixed(1)+'h';finGanhoHora.textContent=moeda(financeiro.horas?financeiro.luc/financeiro.horas:0);
-  atualizarInfoPeriodo();atualizarSaudacao();renderHistorico(lista);renderFinanceiro(lista);renderResumoCategorias(lista);renderAnalitico();salvar();salvarMotoristas();salvarCategorias();
+  kmTotal.textContent=financeiroDashboard.km.toFixed(1);gastoComb.textContent=moeda(financeiroDashboard.gasto);fatBruto.textContent=moeda(financeiroDashboard.bruto);lucroLiq.textContent=moeda(financeiroDashboard.luc);
+  dias.textContent=financeiroDashboard.dias;mediaDia.textContent=(financeiroDashboard.dias?s.tp/financeiroDashboard.dias:0).toFixed(1);lucroKm.textContent=moeda(financeiroDashboard.km?financeiroDashboard.luc/financeiroDashboard.km:0);horasTotal.textContent=financeiroDashboard.horas.toFixed(1)+'h';mediaHorasDia.textContent=(financeiroDashboard.dias?financeiroDashboard.horas/financeiroDashboard.dias:0).toFixed(1)+'h';ganhoHora.textContent=moeda(financeiroDashboard.horas?financeiroDashboard.luc/financeiroDashboard.horas:0);
+  finBruto.textContent=moeda(financeiro.bruto);finComb.textContent=moeda(financeiro.gasto);finLucro.textContent=moeda(financeiro.luc);finLucroPac.textContent=moeda(sFin.tp?financeiro.luc/sFin.tp:0);finLucroKm.textContent=moeda(financeiro.km?financeiro.luc/financeiro.km:0);finGanhoKm.textContent=moeda(financeiro.km?financeiro.bruto/financeiro.km:0);finHoras.textContent=financeiro.horas.toFixed(1)+'h';finGanhoHora.textContent=moeda(financeiro.horas?financeiro.luc/financeiro.horas:0);
+  atualizarInfoPeriodo();atualizarInfoFinanceiro();atualizarSaudacao();renderHistorico(lista);renderFinanceiro(listaFin);renderResumoCategorias(lista);renderAnalitico();salvar();salvarMotoristas();salvarCategorias();
 }
 function atualizarSelectCategorias(){
   const atual=categoriaRota.value;categoriaRota.innerHTML='';
@@ -530,14 +627,35 @@ function atualizarSelectCategorias(){
   if([...categoriaRota.options].some(o=>o.value===atual))categoriaRota.value=atual;atualizarCamposCategoria();
 }
 function atualizarCamposCategoria(){
-  const c=categoria(categoriaRota.value), show=c.usaPacotes||c.usaInsucessos||c.usaReclamacoes;
-  camposPacotes.style.display=show?'block':'none';
-  [pacotes,pacotesB].forEach(e=>e.style.display=c.usaPacotes?'block':'none');
-  [insucessos,insucessosB].forEach(e=>e.style.display=c.usaInsucessos?'block':'none');
-  [reclamacoes,reclamacoesB].forEach(e=>e.style.display=c.usaReclamacoes?'block':'none');
+  const c=categoria(categoriaRota.value);
+  const show=c.usaPacotes||c.usaInsucessos||c.usaReclamacoes;
+  const campos=document.getElementById('camposContaPadrao');
+  const camposB=document.getElementById('camposContaB');
+  if(campos)campos.style.display=show?'block':'none';
+  if(camposB)camposB.style.display=show?'block':'none';
+  [pacotes,pacotesB].forEach(e=>{if(e)e.style.display=c.usaPacotes?'block':'none';});
+  [insucessos,insucessosB].forEach(e=>{if(e)e.style.display=c.usaInsucessos?'block':'none';});
+  [reclamacoes,reclamacoesB].forEach(e=>{if(e)e.style.display=c.usaReclamacoes?'block':'none';});
+  atualizarTipoLancamentoRota();
 }
 function validarInteiros(c,p,i,r){if(c.usaPacotes&&!inteiro(p))return'Pacotes deve ser número inteiro.';if(c.usaInsucessos&&!inteiro(i))return'Insucessos deve ser número inteiro.';if(c.usaReclamacoes&&!inteiro(r))return'Reclamações deve ser número inteiro.';return'';}
+function tipoLancamentoAtual(){return document.getElementById('tipoLancamentoRota')?.value||'padrao';}
+function atualizarTipoLancamentoRota(){
+  const tipo=tipoLancamentoAtual();
+  const blocoA=document.getElementById('blocoContaPadrao');
+  const blocoB=document.getElementById('boxMotoristaB');
+  const padrao=obterMotoristaPadrao();
+  const contaB=obterMotoristaBPadrao();
 
+  if(motoristaA)motoristaA.value=padrao||'';
+  if(motoristaB)motoristaB.value=(tipo==='padrao')?'':(contaB||'');
+  atualizarLabelsContas();
+
+  if(blocoA)blocoA.style.display=(tipo==='padrao'||tipo==='ambas')?'block':'none';
+  if(blocoB)blocoB.style.display=(tipo==='b'||tipo==='ambas')?'block':'none';
+
+  atualizarPreviewFinanceiro();
+}
 let wizardEtapa=1;
 let mesAnaliticoAtual=null;
 
@@ -564,10 +682,7 @@ function voltarWizard(){
   definirWizard(Math.max(1,wizardEtapa-1));
 }
 
-function atualizarMotoristaB(){
-  const box=document.getElementById('boxMotoristaB');
-  if(box)box.style.display=motoristaB.value?'block':'none';
-}
+function atualizarMotoristaB(){atualizarTipoLancamentoRota();}
 
 function validarWizard(etapa){
   if(etapa===1){
@@ -629,36 +744,52 @@ function atualizarPreviewFinanceiro(){
   const lucroEstimado=v-gasto;
 
   box.innerHTML=`<b>Prévia financeira</b><br>Litros estimados: ${litros.toFixed(2)} L<br>Custo combustível: ${moeda(gasto)}<br>Lucro líquido estimado: ${moeda(lucroEstimado)}<br>Ganho por hora estimado: ${moeda(h?lucroEstimado/h:0)}`;
+  if(typeof montarResumoRota==='function')montarResumoRota();
 }
 
 function montarResumoRota(){
+  const box=document.getElementById('resumoRota');
+  if(!box)return;
   const cat=categoria(categoriaRota.value);
-  const temB=!!motoristaB.value;
-  const h=numero(horas.value);
+  const tipo=tipoLancamentoAtual();
+  const incluiA=tipo==='padrao'||tipo==='ambas';
+  const incluiB=tipo==='b'||tipo==='ambas';
   const gasto=(numero(km.value)/numero(consumo.value))*numero(combustivel.value);
   const lucroEstimado=numero(valor.value)-gasto;
-
-  resumoRota.innerHTML=
-    `<b>${formatarData(data.value)} — ${categoriaRota.value}</b><br>`+
-    `<b>${motoristaA.value}</b>: `+
-    `${cat.usaPacotes?numero(pacotes.value)+' pacotes, ':''}`+
-    `${cat.usaInsucessos?numero(insucessos.value)+' insucesso(s), ':''}`+
-    `${cat.usaReclamacoes?numero(reclamacoes.value)+' reclamação(ões)':''}<br>`+
-    (temB?`<b>${motoristaB.value}</b>: ${cat.usaPacotes?numero(pacotesB.value)+' pacotes, ':''}${cat.usaInsucessos?numero(insucessosB.value)+' insucesso(s), ':''}${cat.usaReclamacoes?numero(reclamacoesB.value)+' reclamação(ões)':''}<br>`:'')+
-    `<hr>Bruto: ${moeda(valor.value)}<br>Combustível: ${moeda(gasto)}<br>Lucro líquido: ${moeda(lucroEstimado)}<br>Km: ${numero(km.value).toFixed(1)}<br>Horas: ${h.toFixed(1)}<br>Ganho/hora: ${moeda(h?lucroEstimado/h:0)}`;
+  let html=`<b>${data.value?formatarData(data.value):'Sem data'} — ${categoriaRota.value||'Sem categoria'}</b><br>`;
+  if(incluiA){
+    html+=`<b>${motoristaA.value||'Conta padrão'}</b>: `+
+      `${cat.usaPacotes?numero(pacotes.value)+' pacotes, ':''}`+
+      `${cat.usaInsucessos?numero(insucessos.value)+' insucesso(s), ':''}`+
+      `${cat.usaReclamacoes?numero(reclamacoes.value)+' reclamação(ões)':''}<br>`;
+  }
+  if(incluiB){
+    html+=`<b>${motoristaB.value||'Conta B'}</b>: `+
+      `${cat.usaPacotes?numero(pacotesB.value)+' pacotes, ':''}`+
+      `${cat.usaInsucessos?numero(insucessosB.value)+' insucesso(s), ':''}`+
+      `${cat.usaReclamacoes?numero(reclamacoesB.value)+' reclamação(ões)':''}<br>`;
+  }
+  html+=`<hr>Bruto: ${moeda(numero(valor.value))}<br>Combustível: ${moeda(gasto||0)}<br>Lucro líquido: ${moeda(lucroEstimado||0)}<br>Km: ${numero(km.value).toFixed(1)}<br>Horas: ${numero(horas.value).toFixed(1)}<br>Ganho/hora: ${moeda(numero(horas.value)?lucroEstimado/numero(horas.value):0)}`;
+  box.innerHTML=html;
 }
 
-function limparWizardRota(){
-  ['data','pacotes','pacotesB','valor','km','horas','consumo','combustivel'].forEach(id=>{
+function limparFormularioRota(){
+  ['data','pacotes','pacotesB','valor','km','horas','consumo','combustivel','rotaEditandoIdx'].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.value='';
   });
-  insucessos.value=0;
-  reclamacoes.value=0;
-  insucessosB.value=0;
-  reclamacoesB.value=0;
-  definirWizard(1);
+  if(insucessos)insucessos.value=0;
+  if(reclamacoes)reclamacoes.value=0;
+  if(insucessosB)insucessosB.value=0;
+  if(reclamacoesB)reclamacoesB.value=0;
+  if(tipoLancamentoRota)tipoLancamentoRota.value='padrao';
+  if(btnSalvarRota)btnSalvarRota.textContent='Salvar rota';
+  editando=null;editandoFin=null;
+  definirDataHojeRota();
+  atualizarTipoLancamentoRota();
+  montarResumoRota();
 }
+function limparWizardRota(){limparFormularioRota();}
 
 function dataISO(ano,mes,dia){
   return ano+'-'+String(mes).padStart(2,'0')+'-'+String(dia).padStart(2,'0');
@@ -724,7 +855,7 @@ function mudarMesAnalitico(delta){
 
 function abrirDetalheDia(dataDia){
   const lista=rotasDoDia(dataDia);
-  const s = stats(lista, motoristaSelecionado.value || 'Todos', false);
+  const s = stats(lista, 'Todos', false);
   const fin=stats(lista,'Todos');
 
   diaDetalheTitulo.textContent=formatarData(dataDia);
@@ -779,25 +910,46 @@ function renderTopAnalitico(){
 
 
 async function salvarRota(){
-  if(!validarWizard(1)||!validarWizard(2)||!validarWizard(3))return;
-  const cat=categoria(categoriaRota.value),d=data.value,m1=motoristaA.value,m2=motoristaB.value;
+  const cat=categoria(categoriaRota.value),d=data.value;
+  const tipo=tipoLancamentoAtual();
+  const incluiA=tipo==='padrao'||tipo==='ambas';
+  const incluiB=tipo==='b'||tipo==='ambas';
+
   const p=cat.usaPacotes?numero(pacotes.value):0,i=cat.usaInsucessos?numero(insucessos.value):0,rec=cat.usaReclamacoes?numero(reclamacoes.value):0;
   const p2=cat.usaPacotes?numero(pacotesB.value):0,i2=cat.usaInsucessos?numero(insucessosB.value):0,rec2=cat.usaReclamacoes?numero(reclamacoesB.value):0;
   const val=numero(valor.value),k=numero(km.value),h=numero(horas.value),cons=numero(consumo.value),comb=numero(combustivel.value);
+
   if(!d){alert('Preencha a data.');return;}
-  let erro=validarInteiros(cat,p,i,rec);if(erro){alert('Motorista A: '+erro);return;}
-  if(m2){erro=validarInteiros(cat,p2,i2,rec2);if(erro){alert('Motorista B: '+erro);return;}}
-  if(cat.usaPacotes&&p<=0){alert('Preencha a quantidade de pacotes do Motorista A.');return;}
-  if(m2&&cat.usaPacotes&&p2<=0){alert('Preencha os pacotes do Motorista B ou deixe sem segundo motorista.');return;}
-  if(m2&&m1===m2){alert('Motorista A e B não podem ser iguais.');return;}
+  if(!categoriaRota.value){alert('Escolha a categoria.');return;}
+  if(incluiA&&!motoristaA.value){alert('Escolha o motorista da conta padrão.');return;}
+  if(incluiB&&!motoristaB.value){alert('Crie ou defina um segundo motorista para usar a Conta B.');return;}
+  if(incluiA&&incluiB&&motoristaA.value===motoristaB.value){alert('Conta padrão e Conta B não podem usar o mesmo motorista.');return;}
+
+  let erro='';
+  if(incluiA){erro=validarInteiros(cat,p,i,rec);if(erro){alert('Conta padrão: '+erro);return;}}
+  if(incluiB){erro=validarInteiros(cat,p2,i2,rec2);if(erro){alert('Conta B: '+erro);return;}}
+  if(cat.usaPacotes && ((incluiA?p:0)+(incluiB?p2:0))<=0){alert('Preencha pacotes em pelo menos uma conta.');return;}
   if(val<=0||k<=0||h<=0||cons<=0||comb<=0){alert('Faturamento, km, horas, consumo e preço do combustível são obrigatórios.');return;}
-  const motoristasRota=[{nome:m1,p,i,r:rec}];if(m2)motoristasRota.push({nome:m2,p:p2,i:i2,r:rec2});
+
+  const motoristasRota=[];
+  if(incluiA)motoristasRota.push({nome:motoristaA.value,p,i,r:rec});
+  if(incluiB)motoristasRota.push({nome:motoristaB.value,p:p2,i:i2,r:rec2});
+
+  const idxEdicao=document.getElementById('rotaEditandoIdx')?.value;
   const novaRota={data:d,categoria:cat.nome,motoristas:motoristasRota,valor:val,km:k,horas:h,consumo:cons,combustivel:comb};
-  const salva=await salvarRotaNuvem(novaRota);
-  if(salva)novaRota.id=salva.id;
-  rotas.push(novaRota);
-  salvar();carregarMeses();mesSelecionado.value=mesDaRota({data:d});
-  limparWizardRota();atualizar();abrirAba('inicio');
+
+  if(idxEdicao!==''&&idxEdicao!==undefined&&rotas[idxEdicao]){
+    novaRota.id=rotas[idxEdicao].id;
+    rotas[idxEdicao]={...rotas[idxEdicao],...novaRota};
+    await salvarRotaNuvem(rotas[idxEdicao]);
+  }else{
+    const salva=await salvarRotaNuvem(novaRota);
+    if(salva)novaRota.id=salva.id;
+    rotas.push(novaRota);
+    mesSelecionado.value=mesDaRota({data:d});
+  }
+
+  salvar();carregarMeses();limparFormularioRota();atualizar();abrirAba('inicio');
 }
 function motoristasResumo(x){return(x.motoristas||[]).map(c=>`${c.nome}: ${c.p||0}p / ${c.i||0}i / ${c.r||0}r`).join('<br>');}
 function renderHistorico(lista){
@@ -808,51 +960,7 @@ function renderHistorico(lista){
   }
 
   lista.forEach(x=>{
-    if(editando===x.idx){
-      const cat=categoria(x.categoria);
-      const m1=(x.motoristas&&x.motoristas[0])?x.motoristas[0]:{nome:motoristas[0],p:0,i:0,r:0};
-      const m2=(x.motoristas&&x.motoristas[1])?x.motoristas[1]:{nome:'',p:0,i:0,r:0};
-
-      hist.innerHTML+=`
-      <tr>
-        <td colspan="6">
-          <div class="cat-card" style="text-align:left">
-            <b>Editar rota - ${formatarData(x.data)}</b>
-
-            <label>Data</label>
-            <input id="editData${x.idx}" type="date" value="${x.data}">
-
-            <label>Categoria</label>
-            <select id="editCategoria${x.idx}">
-              ${categorias.map(c=>`<option value="${c.nome}" ${c.nome===x.categoria?'selected':''}>${c.nome}</option>`).join('')}
-            </select>
-
-            <h4>Motorista A</h4>
-            <select id="editMotorista1${x.idx}">
-              ${motoristas.map(m=>`<option value="${m}" ${m===m1.nome?'selected':''}>${m}</option>`).join('')}
-            </select>
-            ${cat.usaPacotes?`<input id="editP1${x.idx}" type="number" step="1" value="${m1.p}" placeholder="Pacotes Motorista A">`:''}
-            ${cat.usaInsucessos?`<input id="editI1${x.idx}" type="number" step="1" value="${m1.i}" placeholder="Insucessos Motorista A">`:''}
-            ${cat.usaReclamacoes?`<input id="editR1${x.idx}" type="number" step="1" value="${m1.r}" placeholder="Reclamações Motorista A">`:''}
-
-            <h4>Motorista B (opcional)</h4>
-            <select id="editMotorista2${x.idx}">
-              <option value="">Sem segundo motorista</option>
-              ${motoristas.map(m=>`<option value="${m}" ${m===m2.nome?'selected':''}>${m}</option>`).join('')}
-            </select>
-            ${cat.usaPacotes?`<input id="editP2${x.idx}" type="number" step="1" value="${m2.p}" placeholder="Pacotes Motorista B">`:''}
-            ${cat.usaInsucessos?`<input id="editI2${x.idx}" type="number" step="1" value="${m2.i}" placeholder="Insucessos Motorista B">`:''}
-            ${cat.usaReclamacoes?`<input id="editR2${x.idx}" type="number" step="1" value="${m2.r}" placeholder="Reclamações Motorista B">`:''}
-
-            <div class="row-2">
-              <button class="btn-success" onclick="salvarEdicaoRota(${x.idx})">💾 Salvar</button>
-              <button class="btn-secondary" onclick="cancelarEdicaoRota()">❌ Cancelar</button>
-            </div>
-          </div>
-        </td>
-      </tr>`;
-    }else{
-      hist.innerHTML+=`
+    hist.innerHTML+=`
       <tr>
         <td>${formatarData(x.data)}</td>
         <td>${x.categoria}</td>
@@ -862,71 +970,50 @@ function renderHistorico(lista){
           <button class="btn-danger" onclick="excluir(${x.idx})">🗑️</button>
         </td>
       </tr>`;
-    }
   });
 }
 
 function editarRota(idx){
-  editando=idx;
-  atualizar();
-}
+  const r=rotas[idx];
+  if(!r)return;
+  abrirAba('rota');
+  rotaEditandoIdx.value=idx;
+  btnSalvarRota.textContent='Salvar alterações';
+  data.value=r.data||'';
+  categoriaRota.value=r.categoria||'';
+  valor.value=formatarNumeroBR(r.valor);
+  km.value=numero(r.km)||'';
+  horas.value=numero(r.horas)||'';
+  consumo.value=numero(r.consumo)||'';
+  combustivel.value=formatarNumeroBR(r.combustivel);
 
-function cancelarEdicaoRota(){
-  editando=null;
-  atualizar();
-}
+  const lista=(r.motoristas||[]);
+  const primeiro=lista[0]||null;
+  const segundo=lista[1]||null;
+  const padrao=obterMotoristaPadrao();
+  let m1=null,m2=null;
 
-async function salvarEdicaoRota(idx){
-  const novaData=document.getElementById('editData'+idx).value;
-  const novaCategoria=document.getElementById('editCategoria'+idx).value;
-  const cat=categoria(novaCategoria);
-
-  const m1=document.getElementById('editMotorista1'+idx).value;
-  const m2=document.getElementById('editMotorista2'+idx).value;
-
-  const p1=cat.usaPacotes?numero(document.getElementById('editP1'+idx)?.value):0;
-  const i1=cat.usaInsucessos?numero(document.getElementById('editI1'+idx)?.value):0;
-  const r1=cat.usaReclamacoes?numero(document.getElementById('editR1'+idx)?.value):0;
-
-  const p2=cat.usaPacotes?numero(document.getElementById('editP2'+idx)?.value):0;
-  const i2=cat.usaInsucessos?numero(document.getElementById('editI2'+idx)?.value):0;
-  const r2=cat.usaReclamacoes?numero(document.getElementById('editR2'+idx)?.value):0;
-
-  if(!novaData){alert('Preencha a data.');return;}
-
-  let erro=validarInteiros(cat,p1,i1,r1);
-  if(erro){alert('Motorista A: '+erro);return;}
-
-  if(m2){
-    erro=validarInteiros(cat,p2,i2,r2);
-    if(erro){alert('Motorista B: '+erro);return;}
+  if(primeiro&&segundo){
+    m1=primeiro;m2=segundo;tipoLancamentoRota.value='ambas';
+  }else if(primeiro){
+    if(primeiro.nome===padrao){m1=primeiro;tipoLancamentoRota.value='padrao';}
+    else{m2=primeiro;tipoLancamentoRota.value='b';}
+  }else{
+    tipoLancamentoRota.value='padrao';
   }
 
-  if(cat.usaPacotes && (p1 + p2) <= 0){
-  alert('Preencha pacotes em pelo menos um motorista.');
-  return;
-}
-  if(m2&&m1===m2){alert('Motorista A e B não podem ser iguais.');return;}
+  if(m1){motoristaA.value=m1.nome;pacotes.value=numero(m1.p);insucessos.value=numero(m1.i);reclamacoes.value=numero(m1.r);}else{motoristaA.value=padrao;pacotes.value=0;insucessos.value=0;reclamacoes.value=0;}
+  if(m2){motoristaB.value=m2.nome;pacotesB.value=numero(m2.p);insucessosB.value=numero(m2.i);reclamacoesB.value=numero(m2.r);}else{pacotesB.value=0;insucessosB.value=0;reclamacoesB.value=0;}
 
-  const motoristasRota=[{nome:m1,p:p1,i:i1,r:r1}];
-  if(m2)motoristasRota.push({nome:m2,p:p2,i:i2,r:r2});
-
-  rotas[idx].data=novaData;
-  rotas[idx].categoria=novaCategoria;
-  rotas[idx].motoristas=motoristasRota;
-  delete rotas[idx].contas;
-
-  rotas[idx].p=motoristasRota.reduce((s,c)=>s+numero(c.p),0);
-  rotas[idx].i=motoristasRota.reduce((s,c)=>s+numero(c.i),0);
-  rotas[idx].r=motoristasRota.reduce((s,c)=>s+numero(c.r),0);
-
-  await salvarRotaNuvem(rotas[idx]);
-  editando=null;
-  salvar();
-  carregarMeses();
-  atualizar();
+  atualizarCamposCategoria();
+  atualizarTipoLancamentoRota();
+  atualizarPreviewFinanceiro();
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
+function cancelarEdicaoRota(){limparFormularioRota();atualizar();}
+
+async function salvarEdicaoRota(idx){editarRota(idx);}
 
 async function excluir(idx){
   if(confirm('Excluir rota?')){
@@ -951,52 +1038,21 @@ async function excluir(idx){
 function renderFinanceiro(lista){
   histFin.innerHTML='';
   if(!lista.length){
-    histFin.innerHTML='<tr><td colspan="8">Nenhuma rota no mês.</td></tr>';
+    histFin.innerHTML='<tr><td colspan="7">Nenhuma rota no período.</td></tr>';
     return;
   }
 
   lista.forEach(x=>{
-    if(editandoFin===x.idx){
-      histFin.innerHTML+=`
-      <tr>
-        <td colspan="8">
-          <div class="cat-card" style="text-align:left">
-            <b>Editar faturamento - ${formatarData(x.data)} | ${x.categoria}</b>
-
-            <label>Valor recebido</label>
-            <input id="finValor${x.idx}" type="number" step="0.01" value="${x.valor}">
-
-            <label>Km rodados</label>
-            <input id="finKm${x.idx}" type="number" step="0.1" value="${x.km}">
-
-            <label>Horas trabalhadas</label>
-            <input id="finHoras${x.idx}" type="number" step="0.1" value="${numero(x.horas)}">
-
-            <label>Consumo km/L</label>
-            <input id="finCons${x.idx}" type="number" step="0.1" value="${x.consumo}">
-
-            <label>Preço combustível</label>
-            <input id="finComb${x.idx}" type="number" step="0.01" value="${x.combustivel}">
-
-            <div class="row-2">
-              <button class="btn-success" onclick="salvarFinanceiro(${x.idx})">💾 Salvar</button>
-              <button class="btn-secondary" onclick="cancelarFinanceiro()">❌ Cancelar</button>
-            </div>
-          </div>
-        </td>
-      </tr>`;
-    }else{
-      histFin.innerHTML+=`
+    histFin.innerHTML+=`
       <tr>
         <td>${formatarData(x.data)}</td>
         <td>${x.categoria}</td>
         <td>${moeda(x.valor)}</td>
         <td>${numero(x.km).toFixed(1)}</td>
+        <td>${numero(x.horas).toFixed(1)}</td>
         <td>${moeda(custo(x))}</td>
         <td>${moeda(lucro(x))}</td>
-        <td class="acao-inline"><button class="btn-warning" onclick="editarFinanceiro(${x.idx})">✏️</button><button class="btn-danger" onclick="excluirFinanceiro(${x.idx})">🗑️</button></td>
       </tr>`;
-    }
   });
 }
 
@@ -1022,11 +1078,7 @@ async function excluirFinanceiro(idx){
   }
 }
 
-function editarFinanceiro(idx){
-  editando=null;
-  editandoFin=idx;
-  atualizar();
-}
+function editarFinanceiro(idx){editarRota(idx);}
 
 function cancelarFinanceiro(){
   editandoFin=null;
