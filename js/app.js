@@ -902,8 +902,10 @@ async function salvarEdicaoRota(idx){
     if(erro){alert('Motorista B: '+erro);return;}
   }
 
-  if(cat.usaPacotes&&p1<=0){alert('Preencha os pacotes do Motorista A.');return;}
-  if(m2&&cat.usaPacotes&&p2<=0){alert('Preencha os pacotes do Motorista B ou deixe sem segundo motorista.');return;}
+  if(cat.usaPacotes && (p1 + p2) <= 0){
+  alert('Preencha pacotes em pelo menos um motorista.');
+  return;
+}
   if(m2&&m1===m2){alert('Motorista A e B não podem ser iguais.');return;}
 
   const motoristasRota=[{nome:m1,p:p1,i:i1,r:r1}];
