@@ -112,7 +112,33 @@ body.dark .metric-box{background:rgba(246,195,57,.06);border-color:rgba(246,195,
 body.dark .form-section{background:rgba(255,255,255,.035)}
 .form-section h4{margin:0 0 10px;color:var(--azul)}body.dark .form-section h4{color:var(--amarelo-logo)}
 .route-account-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.account-card{border:1px solid var(--borda);border-radius:14px;padding:12px;background:var(--card)}
-.account-card h4{margin-top:0}.sticky-actions{position:sticky;bottom:78px;background:var(--card);padding-top:8px;z-index:5;border-top:1px solid var(--borda)}
+.account-card h4{margin-top:0}
+
+/* Barra fixa da tela Nova Rota: fica sempre acima do menu inferior */
+#rota .sticky-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:18px;
+    padding-top:14px;
+    border-top:1px solid var(--borda);
+    background:transparent;
+    position:static;
+
+}
+body.dark #rota .sticky-actions{
+  background:rgba(23,32,51,.96);
+}
+#rota .sticky-actions button{
+  margin:0;
+  min-height:52px;
+}
+#rota .route-form-card{
+  padding-bottom:110px;
+}
+#rota{
+  padding-bottom:150px;
+}
 .money-hint{font-size:12px;color:var(--sub)}
 @media(max-width:640px){.route-account-grid{grid-template-columns:1fr}.row-3{grid-template-columns:1fr}.route-hero{align-items:flex-start}.compact-btn{max-width:none}}
 
@@ -131,4 +157,19 @@ header{
 }
 @media(max-width:480px){
   .header-brand-logo{height:42px;max-width:220px;}
+}
+
+@media(max-width:480px){
+  #rota .sticky-actions{
+    bottom:54px;
+    width:calc(100% - 20px);
+    padding:8px;
+    gap:8px;
+  }
+  #rota .sticky-actions button{
+    min-height:50px;
+  }
+  #rota .route-form-card{
+    padding-bottom:105px;
+  }
 }
