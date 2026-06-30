@@ -724,7 +724,7 @@ function mudarMesAnalitico(delta){
 
 function abrirDetalheDia(dataDia){
   const lista=rotasDoDia(dataDia);
-  const s=stats(lista,motoristaSelecionado.value||'Todos');
+  const s = stats(lista, motoristaSelecionado.value || 'Todos', false);
   const fin=stats(lista,'Todos');
 
   diaDetalheTitulo.textContent=formatarData(dataDia);
