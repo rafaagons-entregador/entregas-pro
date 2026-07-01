@@ -250,6 +250,26 @@
   </div>
 
   <div class="card">
+  <h3>🚚 Simulador de Rota</h3>
+  <p class="simulador-descricao">
+    Simule o impacto de uma rota nos indicadores do mês atual.
+  </p>
+
+  <label>Pacotes da rota</label>
+  <input id="simRotaPacotes" type="number" step="1" min="0" inputmode="numeric" placeholder="Ex: 85">
+
+  <label>Insucessos previstos</label>
+  <input id="simRotaInsucessos" type="number" step="1" min="0" inputmode="numeric" value="0">
+
+  <label>Reclamações previstas</label>
+  <input id="simRotaReclamacoes" type="number" step="1" min="0" inputmode="numeric" value="0">
+
+  <button onclick="simularRota()">Simular rota</button>
+
+  <div id="simRotaRes" class="resultado"></div>
+</div>
+
+  <div class="card">
     <h3>🎯 Meta</h3>
     <small>Veja quantos pacotes perfeitos faltam para atingir uma porcentagem sem reclamações.</small>
     <input id="metaPercentual" type="number" step="0.01" min="0" max="100" inputmode="decimal" placeholder="Ex: 99,90">

@@ -1109,6 +1109,64 @@ async function salvarFinanceiro(idx){
   atualizar();
 }
 function renderResumoCategorias(lista){resumoCategorias.innerHTML='';const grupos={};lista.forEach(x=>{if(!grupos[x.categoria])grupos[x.categoria]=[];grupos[x.categoria].push(x);});const nomes=Object.keys(grupos);if(!nomes.length){resumoCategorias.innerHTML='<p>Nenhuma rota neste mês.</p>';return;}nomes.forEach(k=>{const gs=stats(grupos[k],motoristaSelecionado.value||'Todos',false),gf=stats(grupos[k],'Todos',false);resumoCategorias.innerHTML+=`<div class="resultado"><b>${k}</b><br><span class="badge">Bruto: ${moeda(gf.bruto)}</span><span class="badge">Líquido: ${moeda(gf.luc)}</span><span class="badge">Km: ${gf.km.toFixed(1)}</span><span class="badge">Horas: ${gf.horas.toFixed(1)}</span><span class="badge">Pacotes: ${gs.tp}</span></div>`;});}
+
+function simularRota(){
+  const pacotes = numero(simRotaPacotes.value);
+  const insucessos = numero(simRotaInsucessos.value);
+  const reclamacoes = numero(simRotaReclamacoes.value);
+
+  if(!inteiro(simRotaPacotes.value) || !inteiro(simRotaInsucessos.value) || !inteiro(simRotaReclamacoes.value)){
+    simRotaRes.innerHTML = 'Digite apenas números inteiros.';
+    return;
+  }
+
+  if(pacotes <= 0){
+    simRotaRes.innerHTML = 'Informe a quantidade de pacotes da rota.';
+    return;
+  }
+
+  if(insucessos > pacotes){
+    simRotaRes.innerHTML = 'Os insucessos não podem ser maiores que os pacotes.';
+    return;
+  }
+
+  if(reclamacoes > pacotes){
+    simRotaRes.innerHTML = 'As reclamações não podem ser maiores que os pacotes.';
+    return;
+  }
+
+  const atual = stats(rotasDoMes(), motoristaSelecionado.value || 'Todos');
+
+  const novoPacotes = atual.tp + pacotes;
+  const novoInsucessos = atual.ti + insucessos;
+  const novoReclamacoes = atual.tr + reclamacoes;
+
+  const sucessoAtual = atual.tp ? ((atual.tp - atual.ti) / atual.tp * 100) : 100;
+  const reclamacaoAtual = atual.tp ? ((atual.tp - atual.tr) / atual.tp * 100) : 100;
+
+  const sucessoNovo = novoPacotes ? ((novoPacotes - novoInsucessos) / novoPacotes * 100) : 100;
+  const reclamacaoNovo = novoPacotes ? ((novoPacotes - novoReclamacoes) / novoPacotes * 100) : 100;
+
+  const difSucesso = sucessoNovo - sucessoAtual;
+  const difReclamacao = reclamacaoNovo - reclamacaoAtual;
+
+  simRotaRes.innerHTML = `
+    <b>Resultado da simulação</b><br><br>
+
+    <span class="badge">Pacotes: ${atual.tp} → ${novoPacotes}</span><br>
+    <span class="badge">Insucessos: ${atual.ti} → ${novoInsucessos}</span><br>
+    <span class="badge">Reclamações: ${atual.tr} → ${novoReclamacoes}</span><br><br>
+
+    <b>Entregas com sucesso</b><br>
+    ${sucessoAtual.toFixed(2)}% → <b>${sucessoNovo.toFixed(2)}%</b>
+    <small> (${difSucesso >= 0 ? '+' : ''}${difSucesso.toFixed(2)}%)</small><br><br>
+
+    <b>Sem reclamações</b><br>
+    ${reclamacaoAtual.toFixed(2)}% → <b>${reclamacaoNovo.toFixed(2)}%</b>
+    <small> (${difReclamacao >= 0 ? '+' : ''}${difReclamacao.toFixed(2)}%)</small>
+  `;
+}
+
 function simularInsucessos(){
   const add=numero(simIns.value);
   if(!inteiro(simIns.value)){

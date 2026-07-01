@@ -173,3 +173,9 @@ header{
     padding-bottom:105px;
   }
 }
+
+.simulador-descricao{
+    margin: 8px 0 18px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
