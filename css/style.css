@@ -179,3 +179,96 @@ header{
     color: var(--text-secondary);
     line-height: 1.5;
 }
+
+
+/* Entreghia v13.1 - Configurações limpas sem quebrar os filtros internos */
+header{
+  display:none !important;
+}
+
+body{
+  padding-top:0 !important;
+}
+
+body.light{
+  --bg:#f3f4f6;
+  --card:#ffffff;
+  --texto:#111827;
+  --sub:#64748b;
+  --borda:#d8dee9;
+}
+
+body.light input,
+body.light select{
+  background:#ffffff;
+  color:#111827;
+}
+
+body.light .menu{
+  background:#ffffff;
+}
+
+body.light .metric-box,
+body.light .resultado,
+body.light .form-section,
+body.light .route-pill{
+  background:rgba(21,72,150,.06);
+}
+
+body.light .auth-screen{
+  background:#f3f4f6;
+}
+
+body.light .splash-screen{
+  background:var(--azul);
+}
+
+.auth-card{
+  position:relative;
+}
+
+.auth-theme-toggle{
+  position:absolute;
+  right:14px;
+  top:14px;
+  width:40px;
+  height:40px;
+  padding:0;
+  margin:0;
+  border-radius:999px;
+  background:rgba(21,72,150,.12);
+  color:var(--texto);
+  border:1px solid var(--borda);
+  font-size:18px;
+  line-height:1;
+}
+
+.config-section{
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid var(--borda);
+}
+
+.config-section h4{
+  margin:0 0 8px;
+}
+
+#btnTemaEscuro.active-theme,
+#btnTemaClaro.active-theme{
+  background:var(--azul);
+  color:#fff;
+}
+
+.config-toggle-content{
+  margin-top:12px;
+  padding-top:12px;
+  border-top:1px solid var(--borda);
+}
+
+.config-toggle-content.hidden{
+  display:none!important;
+}
+
+
+/* Entreghia v13.2 */
+#simRotaConsiderarMes{margin-right:6px;}

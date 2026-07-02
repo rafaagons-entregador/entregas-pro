@@ -484,6 +484,24 @@ function stats(lista, filtro='Todos', usarFiltroIndicadores=true){
   const dias=[...new Set(lista.map(x=>x.data))].length;
   return{tp,ti,tr,bruto,gasto,luc,km,horas,dias};
 }
+
+// ============================
+// Entreghia v13.2 - Pacotes Gerais x Pacotes ML
+// ============================
+function categoriaParticipaIndicadores(nome){
+  const cat = categoria(nome);
+  return cat.participaIndicadores !== false;
+}
+
+function statsGerais(lista, filtro='Todos'){
+  return stats(lista, filtro, false);
+}
+
+function statsML(lista, filtro='Todos'){
+  const filtrada = lista.filter(r => categoriaParticipaIndicadores(r.categoria));
+  return stats(filtrada, filtro, false);
+}
+
 function definirDataHojeRota(){
   const campo=document.getElementById('data');
   if(campo && !campo.value){
@@ -611,15 +629,16 @@ function toggleFinanceiroRotas(){
 function atualizar(){
   normalizarRotas();rotas.sort((a,b)=>new Date(a.data)-new Date(b.data));
   atualizarSelectCategorias();atualizarSelectMotoristas();atualizarCategoriasUI();atualizarMotoristasUI();
-  const lista=rotasDoMes(),filtro=motoristaSelecionado.value||'Todos',s=stats(lista,filtro),financeiroDashboard=stats(lista,'Todos'),listaFin=rotasFinanceiroPeriodo(),financeiro=stats(listaFin,'Todos',false),sFin=stats(listaFin,'Todos',false);
+  const lista=rotasDoMes(),filtro=motoristaSelecionado.value||'Todos',s=statsML(lista,filtro),geral=statsGerais(lista,filtro),financeiroDashboard=stats(lista,'Todos',false),listaFin=rotasFinanceiroPeriodo(),financeiro=stats(listaFin,'Todos',false),sFin=statsML(listaFin,'Todos');
   const sucesso=s.tp?((s.tp-s.ti)/s.tp*100):100,recl=s.tp?((s.tp-s.tr)/s.tp*100):100;
+  if(document.getElementById('tpGeral'))tpGeral.textContent=geral.tp;
   tp.textContent=s.tp;
   insucessosDash.textContent=s.ti;
   reclamacoesDash.textContent=s.tr;;ps.textContent=sucesso.toFixed(2)+'%';pr.textContent=recl.toFixed(2)+'%';ps.className='metric '+classePercentual(sucesso);pr.className='metric '+classePercentual(recl);
   kmTotal.textContent=financeiroDashboard.km.toFixed(1);gastoComb.textContent=moeda(financeiroDashboard.gasto);fatBruto.textContent=moeda(financeiroDashboard.bruto);lucroLiq.textContent=moeda(financeiroDashboard.luc);
   dias.textContent=financeiroDashboard.dias;mediaDia.textContent=(financeiroDashboard.dias?s.tp/financeiroDashboard.dias:0).toFixed(1);lucroKm.textContent=moeda(financeiroDashboard.km?financeiroDashboard.luc/financeiroDashboard.km:0);horasTotal.textContent=financeiroDashboard.horas.toFixed(1)+'h';mediaHorasDia.textContent=(financeiroDashboard.dias?financeiroDashboard.horas/financeiroDashboard.dias:0).toFixed(1)+'h';ganhoHora.textContent=moeda(financeiroDashboard.horas?financeiroDashboard.luc/financeiroDashboard.horas:0);
   finBruto.textContent=moeda(financeiro.bruto);finComb.textContent=moeda(financeiro.gasto);finLucro.textContent=moeda(financeiro.luc);finLucroPac.textContent=moeda(sFin.tp?financeiro.luc/sFin.tp:0);finLucroKm.textContent=moeda(financeiro.km?financeiro.luc/financeiro.km:0);finGanhoKm.textContent=moeda(financeiro.km?financeiro.bruto/financeiro.km:0);finHoras.textContent=financeiro.horas.toFixed(1)+'h';finGanhoHora.textContent=moeda(financeiro.horas?financeiro.luc/financeiro.horas:0);
-  atualizarInfoPeriodo();atualizarInfoFinanceiro();atualizarSaudacao();renderHistorico(lista);renderFinanceiro(listaFin);renderResumoCategorias(lista);renderAnalitico();salvar();salvarMotoristas();salvarCategorias();
+  atualizarInfoPeriodo();atualizarInfoFinanceiro();atualizarSaudacao();aplicarTemaSalvo();renderHistorico(lista);renderFinanceiro(listaFin);renderResumoCategorias(lista);renderAnalitico();salvar();salvarMotoristas();salvarCategorias();
 }
 function atualizarSelectCategorias(){
   const atual=categoriaRota.value;categoriaRota.innerHTML='';
@@ -1135,7 +1154,11 @@ function simularRota(){
     return;
   }
 
-  const atual = stats(rotasDoMes(), motoristaSelecionado.value || 'Todos');
+  const considerarMes = document.getElementById('simRotaConsiderarMes')?.checked ?? true;
+
+  const atual = considerarMes
+    ? statsML(rotasDoMes(), motoristaSelecionado.value || 'Todos')
+    : {tp:0, ti:0, tr:0};
 
   const novoPacotes = atual.tp + pacotes;
   const novoInsucessos = atual.ti + insucessos;
@@ -1149,11 +1172,13 @@ function simularRota(){
 
   const difSucesso = sucessoNovo - sucessoAtual;
   const difReclamacao = reclamacaoNovo - reclamacaoAtual;
+  const baseTexto = considerarMes ? 'Considerando pacotes ML já lançados no mês.' : 'Considerando apenas a rota simulada.';
 
   simRotaRes.innerHTML = `
-    <b>Resultado da simulação</b><br><br>
+    <b>Resultado da simulação</b><br>
+    <small>${baseTexto}</small><br><br>
 
-    <span class="badge">Pacotes: ${atual.tp} → ${novoPacotes}</span><br>
+    <span class="badge">Pacotes ML: ${atual.tp} → ${novoPacotes}</span><br>
     <span class="badge">Insucessos: ${atual.ti} → ${novoInsucessos}</span><br>
     <span class="badge">Reclamações: ${atual.tr} → ${novoReclamacoes}</span><br><br>
 
@@ -1607,7 +1632,8 @@ if(localStorage.getItem('tema_entregas_pro')==='dark')document.body.classList.ad
 const dashboardCardsConfig=[
   {id:'faturamentoBruto',label:'Faturamento Bruto'},
   {id:'lucroLiquido',label:'Lucro Líquido'},
-  {id:'pacotes',label:'Pacotes'},
+  {id:'pacotesGerais',label:'Pacotes Gerais'},
+  {id:'pacotes',label:'Pacotes ML'},
   {id:'insucessos',label:'Insucessos'},
   {id:'reclamacoes',label:'Reclamações'},
   {id:'sucesso',label:'% Sucesso'},
@@ -1746,3 +1772,58 @@ function iniciarApp(){
   }
 }
 verificarSessao();
+
+
+
+// ============================
+// Entreghia v13.1 - Tema e seções recolhidas
+// ============================
+function aplicarTemaSalvo(){
+  const tema = localStorage.getItem('tema_entreghia') || localStorage.getItem('tema_entregas_pro') || 'dark';
+
+  document.body.classList.toggle('light', tema === 'light');
+  document.body.classList.toggle('dark', tema !== 'light');
+
+  const escuro = document.getElementById('btnTemaEscuro');
+  const claro = document.getElementById('btnTemaClaro');
+
+  if(escuro)escuro.classList.toggle('active-theme', tema !== 'light');
+  if(claro)claro.classList.toggle('active-theme', tema === 'light');
+}
+
+function definirTema(tema){
+  const final = tema === 'light' ? 'light' : 'dark';
+  localStorage.setItem('tema_entreghia', final);
+  localStorage.setItem('tema_entregas_pro', final);
+  aplicarTemaSalvo();
+}
+
+function togglePrefsDashboard(){
+  const box = document.getElementById('dashboardPrefsContainer');
+  const btn = document.getElementById('btnPrefsDashboard');
+  if(!box)return;
+
+  const abrir = box.classList.contains('hidden');
+  box.classList.toggle('hidden', !abrir);
+
+  if(btn)btn.textContent = abrir
+    ? '🧩 Esconder personalização do Dashboard'
+    : '🧩 Mostrar personalização do Dashboard';
+}
+
+function toggleMotoristasCategorias(){
+  const box = document.getElementById('motoristasCategoriasContainer');
+  const btn = document.getElementById('btnMotoristasCategorias');
+  if(!box)return;
+
+  const abrir = box.classList.contains('hidden');
+  box.classList.toggle('hidden', !abrir);
+
+  if(btn)btn.textContent = abrir
+    ? '👥 Esconder motoristas e categorias'
+    : '👥 Mostrar motoristas e categorias';
+}
+
+document.addEventListener('DOMContentLoaded', aplicarTemaSalvo);
+aplicarTemaSalvo();
+
