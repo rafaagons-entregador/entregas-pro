@@ -1,4 +1,4 @@
-const CACHE='entreghia-v13-1-config-corrigida';
+const CACHE='entreghia-v13-2-1-pacotes-ml-fix';
 const FILES=['./','./index.html','./manifest.json','./css/style.css','./js/auth.js','./js/utils.js','./js/app.js','./icons/icon-192.png','./icons/icon-512.png','./icons/logo-header.png','./icons/logo-full.png','./favicon.ico'];
 
 self.addEventListener('install',e=>{

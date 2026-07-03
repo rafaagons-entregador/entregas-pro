@@ -489,8 +489,11 @@ function stats(lista, filtro='Todos', usarFiltroIndicadores=true){
 // Entreghia v13.2 - Pacotes Gerais x Pacotes ML
 // ============================
 function categoriaParticipaIndicadores(nome){
-  const cat = categoria(nome);
-  return cat.participaIndicadores !== false;
+  return String(nome || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'') === 'mercado livre';
 }
 
 function statsGerais(lista, filtro='Todos'){
