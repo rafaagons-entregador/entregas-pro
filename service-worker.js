@@ -1,4 +1,4 @@
-const CACHE='entreghia-v13-2-2-media-pacotes-gerais';
+const CACHE='entreghia-v13-2-3 media-pacotes-gerais ';
 const FILES=['./','./index.html','./manifest.json','./css/style.css','./js/auth.js','./js/utils.js','./js/app.js','./icons/icon-192.png','./icons/icon-512.png','./icons/logo-header.png','./icons/logo-full.png','./favicon.ico'];
 
 self.addEventListener('install',e=>{
